@@ -1,0 +1,154 @@
+/* Custom Properties for Estate Theme */
+:root {
+  --primary-estate: #1a2a6c; /* Deep Navy */
+  --accent-estate: #8C55AA;  /* Keeping your signature purple as an accent */
+  --text-main: #2d3436;
+  --text-light: #636e72;
+  --bg-soft: #f8f9fa;
+}
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-soft);
+  padding: 20px;
+}
+
+.login-card {
+  background: white;
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+}
+
+/* Image Side (Estate Feel) */
+.login-image-section {
+  flex: 1;
+  background: url('esss.jpg');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: none; /* Hidden on mobile */
+}
+
+@media (min-width: 768px) {
+  .login-image-section { display: block; }
+}
+
+.overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 40px;
+  background: linear-gradient(transparent, rgba(26, 42, 108, 0.9));
+  color: white;
+}
+
+.overlay h2 { font-size: 2rem; margin-bottom: 10px; }
+
+/* Form Side */
+.login-form-section {
+  flex: 1;
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+}
+
+.back-home {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+.estate-logo {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary-estate);
+  margin-bottom: 8px;
+}
+
+.estate-logo span { color: var(--accent-estate); }
+
+.welcome-text {
+  color: var(--text-light);
+  margin-bottom: 40px;
+}
+
+/* Input Styles */
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #dfe6e9;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--accent-estate);
+  box-shadow: 0 0 0 4px rgba(140, 85, 170, 0.1);
+}
+
+/* Button & Links */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  font-size: 0.85rem;
+}
+
+.forgot-link {
+  color: var(--accent-estate);
+  font-weight: 600;
+}
+
+.login-submit-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--primary-estate);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.3s;
+}
+
+.login-submit-btn:hover {
+  background-color: #0e1a4d;
+  transform: translateY(-2px);
+}
+
+.signup-prompt {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.signup-prompt a {
+  color: var(--primary-estate);
+  font-weight: 700;
+}
