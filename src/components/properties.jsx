@@ -1,186 +1,248 @@
-import React, { useState } from 'react';
-import { Container, Row, Col, Card, Badge, Button, Modal, Form } from 'react-bootstrap';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { Container, Row, Col, Card, Button, Modal, Form, Alert, Badge } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import API from "../api/first";
+import "./properties.css";
+import "./navbar.css";
 
-export default function Properties({ properties, setProperties }) {
-  const [category, setCategory] = useState('All');
-  const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState(null);
+const BASE_URL = "http://127.0.0.1:8000";
+
+export default function Properties() {
+  const [properties, setProperties] = useState([]);
+  const [filter, setFilter] = useState("All");
+  const [show, setShow] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [alert, setAlert] = useState({ type: "", msg: "" });
+  const [liked, setLiked] = useState([]);
 
   const [formData, setFormData] = useState({
-    title: '', price: '', loc: '', type: 'Villa', beds: '', img: ''
+    title: "",
+    price: "",
+    location: "",
+    type: "Villa", // Classification
+    bedrooms: "",
+    area: "",
+    image: null,
   });
 
-  const handleClose = () => {
-    setShowModal(false);
-    setEditId(null);
-    setFormData({ title: '', price: '', loc: '', type: 'Villa', beds: '', img: '' });
-  };
-
-  // --- NEW DELETE FUNCTION ---
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this property?")) {
-      const updatedList = properties.filter(p => p.id !== id);
-      setProperties(updatedList);
-      localStorage.setItem('myProperties', JSON.stringify(updatedList));
+  const loadProperties = async () => {
+    try {
+      const res = await API.get("properties/");
+      setProperties(res.data);
+    } catch {
+      setAlert({ type: "danger", msg: "❌ Failed to load properties" });
     }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setFormData({ ...formData, img: reader.result });
-      reader.readAsDataURL(file);
+  useEffect(() => {
+    loadProperties();
+  }, []);
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      price: "",
+      location: "",
+      type: "Villa",
+      bedrooms: "",
+      area: "",
+      image: null,
+    });
+    setEditingId(null);
+  };
+
+  const handleEdit = (p) => {
+    setEditingId(p.id);
+    setFormData({
+      title: p.title,
+      price: p.price,
+      location: p.location,
+      type: p.type || "Villa",
+      bedrooms: p.bedrooms || "",
+      area: p.area || "",
+      image: null,
+    });
+    setShow(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure?")) {
+      try {
+        await API.delete(`properties/${id}/`);
+        loadProperties();
+        setAlert({ type: "success", msg: "Property deleted" });
+        setTimeout(() => setAlert({ type: "", msg: "" }), 2000);
+      } catch {
+        setAlert({ type: "danger", msg: "Delete failed" });
+      }
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleLike = (id) => {
+    setLiked(prev => prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]);
+  };
+
+  const handleAddToCart = (property) => {
+    const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const exists = existingCart.find(item => item.id === property.id);
+    if (!exists) {
+      existingCart.push(property);
+      localStorage.setItem("cart", JSON.stringify(existingCart));
+      setAlert({ type: "success", msg: "Added to shortlist 🛒" });
+      setTimeout(() => setAlert({ type: "", msg: "" }), 2000);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    let updatedList;
-    if (editId) {
-      updatedList = properties.map(p => p.id === editId ? { ...formData, id: editId } : p);
-    } else {
-      updatedList = [{ ...formData, id: Date.now() }, ...properties];
+    const data = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (formData[key] !== null && formData[key] !== "") data.append(key, formData[key]);
+    });
+
+    try {
+      if (editingId) {
+        await API.patch(`properties/${editingId}/`, data);
+      } else {
+        await API.post("properties/", data);
+      }
+      setShow(false);
+      resetForm();
+      loadProperties();
+      setAlert({ type: "success", msg: "Saved successfully" });
+    } catch {
+      setAlert({ type: "danger", msg: "Operation failed" });
     }
-    setProperties(updatedList);
-    localStorage.setItem('myProperties', JSON.stringify(updatedList));
-    handleClose();
   };
 
-  const filteredProperties = category === 'All' 
-    ? properties 
-    : properties.filter(item => item.type === category);
+  const filteredProperties = filter === "All" ? properties : properties.filter(p => p.type === filter);
+
+  const getImageUrl = (path) => {
+    if (!path) return "https://via.placeholder.com/400x300";
+    return path.startsWith("http") ? path : `${BASE_URL}${path}`;
+  };
 
   return (
     <div className="properties-page">
-      {/* Navbar */}
-      <nav className="navbar bg-white shadow-sm px-4 py-3 mb-4">
+      <nav className="navbar px-4">
         <div className="nav-logo"><h2>RealEstate</h2></div>
-        <ul className="nav-links d-flex gap-4 list-unstyled mb-0">
-          <li><Link to="/" className="text-decoration-none text-dark">Home</Link></li>
-          <li><Link to="/properties" className="text-decoration-none text-dark fw-bold">Properties</Link></li>
-        </ul>
-        <div className="nav-buttons d-flex gap-2">
-          <Button onClick={() => setShowModal(true)} style={{ backgroundColor: '#8C55AA', border: 'none' }}>
-            + Add Property
-          </Button>
+        {/* Filter Selection */}
+        <div className="filter-group d-none d-md-flex">
+          {["All", "Villa", "House", "Land", "Apartment"].map(t => (
+            <Button key={t} variant={filter === t ? "dark" : "light"} className="mx-1 btn-sm" onClick={() => setFilter(t)}>
+              {t}
+            </Button>
+          ))}
         </div>
+        <ul className="nav-links mb-0">
+          <Link to="/"><li>Home</li></Link>
+          <Link to="/cart"><li>Shortlist 🛒</li></Link>
+        </ul>
+        <Button className="btn-add-luxe" onClick={() => { resetForm(); setShow(true); }}>
+          + Post Property
+        </Button>
       </nav>
 
-      {/* Filter Tabs */}
-      <Container className="text-center mb-5">
-        {['All', 'Villa', 'Apartment', 'House', 'Flat'].map(cat => (
-          <Button 
-            key={cat} 
-            variant={category === cat ? "primary" : "outline-secondary"}
-            className="mx-1 rounded-pill px-4"
-            onClick={() => setCategory(cat)}
-            style={{ backgroundColor: category === cat ? '#8C55AA' : '', borderColor: '#8C55AA' }}
-          >
-            {cat}
-          </Button>
-        ))}
-      </Container>
-
       <Container>
-        <Row className="g-4">
-          <AnimatePresence>
-            {filteredProperties.map((item) => (
-              <Col key={item.id} lg={4} md={6}>
-                <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <Card className="h-100 border-0 shadow-sm overflow-hidden">
-                    {/* DELETE BUTTON OVERLAY */}
-                    <div style={{ position: 'relative' }}>
-                       <Button 
-                        variant="danger" 
-                        size="sm" 
-                        onClick={() => handleDelete(item.id)}
-                        style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10, borderRadius: '50%', width: '30px', height: '30px', padding: 0 }}
-                      >
-                        ×
-                      </Button>
-                      <Card.Img variant="top" src={item.img || 'https://via.placeholder.com/300'} style={{ height: '220px', objectFit: 'cover' }} />
-                    </div>
+        {alert.msg && <Alert variant={alert.type} className="mt-3">{alert.msg}</Alert>}
 
-                    <Card.Body>
-                      <Badge bg="secondary" className="mb-2">{item.type}</Badge>
-                      <Card.Title className="fw-bold">{item.title}</Card.Title>
-                      
-                      <Card.Text className="text-muted mb-1">
-                        <i className="bi bi-geo-alt-fill me-1"></i>{item.loc || "No Location"}
-                      </Card.Text>
-                      
-                      <Card.Text className="text-dark small">{item.beds} BHK Available</Card.Text>
-                      <div className="d-flex justify-content-between align-items-center mt-3">
-                        <h5 className="text-primary fw-bold mb-0">₹{item.price}</h5>
-                        <div className="d-flex gap-2">
-                          <Button size="sm" variant="outline-primary" onClick={() => { setEditId(item.id); setFormData(item); setShowModal(true); }}>Edit</Button>
-                          <Link to={`/property/${item.id}`} className="btn btn-sm btn-dark">View</Link>
-                        </div>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </motion.div>
-              </Col>
-            ))}
-          </AnimatePresence>
+        <Row className="mt-5">
+          {filteredProperties.map((p) => (
+            <Col lg={4} md={6} key={p.id} className="mb-5">
+              <Card className="luxury-card h-100 border-0 shadow-sm" style={{borderRadius: '15px', overflow: 'hidden'}}>
+                <div className="card-img-container" style={{position: 'relative', height: '220px'}}>
+                  <Badge bg="primary" style={{position: 'absolute', top: '10px', left: '10px', zIndex: '2'}}>{p.type}</Badge>
+                  <div className="price-overlay" style={{position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(255,255,255,0.9)', padding: '5px 10px', borderRadius: '5px', fontWeight: 'bold'}}>
+                    ₹{Number(p.price).toLocaleString("en-IN")}
+                  </div>
+                  <img src={getImageUrl(p.image)} alt={p.title} className="w-100 h-100" style={{objectFit: 'cover'}} />
+                </div>
+
+                <Card.Body>
+                  <h5 className="fw-bold text-navy">{p.title}</h5>
+                  <p className="text-muted small">📍 {p.location}</p>
+                  <div className="d-flex gap-2 mb-3">
+                    {p.bedrooms && <Badge bg="light" text="dark border">🛏️ {p.bedrooms} BHK</Badge>}
+                    {p.area && <Badge bg="light" text="dark border">📐 {p.area} sq.ft</Badge>}
+                  </div>
+                  
+                  <hr />
+
+                  <div className="d-flex justify-content-between align-items-center">
+                    <Link to={`/properties/${p.id}`} className="btn btn-sm btn-dark rounded-pill px-3">Details</Link>
+                    <div className="d-flex gap-1">
+                      <Button variant="light" size="sm" onClick={() => handleLike(p.id)}>{liked.includes(p.id) ? "❤️" : "🤍"}</Button>
+                      <Button variant="light" size="sm" onClick={() => handleAddToCart(p)}>🛒</Button>
+                      <Button variant="outline-secondary" size="sm" onClick={() => handleEdit(p)}>Edit</Button>
+                      <Button variant="outline-danger" size="sm" onClick={() => handleDelete(p.id)}>Delete</Button>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
         </Row>
       </Container>
 
-      {/* Modal remains the same */}
-      <Modal show={showModal} onHide={handleClose} centered>
-        <Modal.Header closeButton><Modal.Title>{editId ? 'Edit' : 'Add'} Property</Modal.Title></Modal.Header>
+      {/* MODAL WITH ADDED FIELDS */}
+      <Modal show={show} onHide={() => setShow(false)} centered>
         <Form onSubmit={handleSubmit}>
+          <Modal.Header closeButton>
+            <Modal.Title className="fw-bold">{editingId ? "Edit" : "Post"} Property</Modal.Title>
+          </Modal.Header>
           <Modal.Body>
-            <Form.Group className="mb-3">
-              <Form.Label>Property Image</Form.Label>
-              <Form.Control type="file" accept="image/*" onChange={handleImageChange} />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Title</Form.Label>
-              <Form.Control 
-                placeholder="e.g. Skyline Apartment" 
-                value={formData.title} 
-                onChange={e => setFormData({...formData, title: e.target.value})} 
-                required 
-              />
-            </Form.Group>
-
-            <Row className="mb-3">
-              <Col md={6}>
-                <Form.Label>Category (Type)</Form.Label>
-                <Form.Select 
-                  value={formData.type} 
-                  onChange={e => setFormData({...formData, type: e.target.value})}
-                >
-                  <option value="Villa">Villa</option>
-                  <option value="Apartment">Apartment</option>
-                  <option value="House">House</option>
-                  <option value="Flat">Flat</option>
-                </Form.Select>
-              </Col>
-              <Col md={6}>
-                <Form.Label>Location</Form.Label>
-                <Form.Control 
-                  placeholder="City (e.g. Kochi)" 
-                  value={formData.loc} 
-                  onChange={e => setFormData({...formData, loc: e.target.value})} 
-                  required 
-                />
-              </Col>
-            </Row>
-
             <Row>
-              <Col><Form.Label>Price</Form.Label><Form.Control placeholder="e.g. 50L" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} /></Col>
-              <Col><Form.Label>BHK</Form.Label><Form.Control type="number" value={formData.beds} onChange={e => setFormData({...formData, beds: e.target.value})} /></Col>
+              <Col md={12}>
+                <Form.Group className="mb-2">
+                  <Form.Label className="small fw-bold">Title</Form.Label>
+                  <Form.Control placeholder="e.g. Luxury Sky Villa" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-2">
+                  <Form.Label className="small fw-bold">Classification</Form.Label>
+                  <Form.Select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })}>
+                    <option value="Villa">Villa</option>
+                    <option value="House">House</option>
+                    <option value="Land">Land</option>
+                    <option value="Apartment">Apartment</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-2">
+                  <Form.Label className="small fw-bold">Price (₹)</Form.Label>
+                  <Form.Control type="number" placeholder="Price" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} required />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-2">
+                  <Form.Label className="small fw-bold">Bedrooms (BHK)</Form.Label>
+                  <Form.Control type="number" placeholder="e.g. 3" value={formData.bedrooms} onChange={e => setFormData({ ...formData, bedrooms: e.target.value })} />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-2">
+                  <Form.Label className="small fw-bold">Area (sq.ft)</Form.Label>
+                  <Form.Control type="number" placeholder="e.g. 2400" value={formData.area} onChange={e => setFormData({ ...formData, area: e.target.value })} />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group className="mb-2">
+                  <Form.Label className="small fw-bold">Location</Form.Label>
+                  <Form.Control placeholder="City, Area" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} required />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group className="mb-2">
+                  <Form.Label className="small fw-bold">Property Image</Form.Label>
+                  <Form.Control type="file" onChange={e => setFormData({ ...formData, image: e.target.files[0] })} />
+                </Form.Group>
+              </Col>
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleClose}>Cancel</Button>
-            <Button type="submit" style={{ backgroundColor: '#8C55AA', border: 'none' }}>Save Property</Button>
+            <Button type="submit" className="w-100 btn-add-luxe py-2">Save Property Details</Button>
           </Modal.Footer>
         </Form>
       </Modal>

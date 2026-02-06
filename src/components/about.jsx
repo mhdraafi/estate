@@ -3,18 +3,26 @@ import { Container, Row, Col } from 'react-bootstrap';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import "./navbar.css";
-import './about.css';
+import "./about.css";
 
 export default function About() {
-  const fadeInUp = {
-    initial: { opacity: 0, y: 20 },
+  const fadeUp = {
+    initial: { opacity: 0, y: 50 },
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true },
-    transition: { duration: 0.6 }
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
+  };
+
+  const staggerContainer = {
+    initial: {},
+    whileInView: {
+      transition: { staggerChildren: 0.1 }
+    }
   };
 
   return (
     <div className="about-page">
+      {/* ===== NAVBAR (UNCHANGED) ===== */}
       <nav className="navbar">
         <div className="nav-logo"><h2>RealEstate</h2></div>
         <ul className="nav-links">
@@ -29,97 +37,90 @@ export default function About() {
         </div>
       </nav>
 
-      {/* Minimalist Hero */}
-      <section className="about-hero-clean py-5">
-        <Container>
+      {/* ===== PREMIUM HERO ===== */}
+      <section className="about-hero-luxe">
+        <div className="hero-overlay"></div>
+        <Container className="position-relative">
           <Row className="justify-content-center text-center">
-            <Col lg={7}>
-              <motion.span className="section-subtitle" {...fadeInUp}>Our Philosophy</motion.span>
-              <motion.h2 className="section-title-small" {...fadeInUp}>
-                Simplicity in finding, <br /> excellence in living.
-              </motion.h2>
-              <motion.p className="section-desc" {...fadeInUp}>
-                RealEstate was founded on the principle that the journey to a new home should be as seamless as the destination itself. We focus on transparency, design, and long-term value.
-              </motion.p>
+            <Col lg={9}>
+              <motion.div {...fadeUp}>
+                <span className="premium-badge">Since 2014</span>
+                <h1 className="display-3 fw-bold text-white mb-4">
+                  Crafting <span className="text-accent">Legacies</span>, <br/>Not Just Buildings.
+                </h1>
+                <p className="hero-subtext">
+                  RealEstate Kerala blends architectural excellence with the serenity of God's Own Country. 
+                  We don't just sell property; we curate lifestyles.
+                </p>
+              </motion.div>
             </Col>
           </Row>
         </Container>
       </section>
 
-      {/* Grid Based Info - No Images */}
+      {/* ===== INFO GRID WITH STAGGER ===== */}
       <section className="info-grid-section">
         <Container>
-          <Row className="g-0 border-top border-bottom">
-            <Col md={4} className="info-box border-end">
-              <motion.div {...fadeInUp}>
-                <span className="box-num">01</span>
-                <h4>The Vision</h4>
-                <p>To redefine the standard of luxury living in Kerala through verified listings and ethical consultancy.</p>
-              </motion.div>
-            </Col>
-            <Col md={4} className="info-box border-end">
-              <motion.div {...fadeInUp} transition={{ delay: 0.2 }}>
-                <span className="box-num">02</span>
-                <h4>The Mission</h4>
-                <p>Ensuring every client finds a space that matches their lifestyle, backed by 100% legal transparency.</p>
-              </motion.div>
-            </Col>
-            <Col md={4} className="info-box">
-              <motion.div {...fadeInUp} transition={{ delay: 0.4 }}>
-                <span className="box-num">03</span>
-                <h4>The Promise</h4>
-                <p>From the first site visit to the final registration, we stay by your side as a trusted partner.</p>
-              </motion.div>
-            </Col>
-          </Row>
+          <motion.div 
+            variants={staggerContainer} 
+            initial="initial" 
+            whileInView="whileInView" 
+            viewport={{ once: true }}
+          >
+            <Row className="g-4">
+              {[
+                { n: "01", t: "The Vision", d: "Redefining premium living in Kerala with verified luxury listings and honest consultation." },
+                { n: "02", t: "The Mission", d: "Helping families find homes that fit their unique lifestyle with complete legal transparency." },
+                { n: "03", t: "The Promise", d: "From initial site visits to final registration, we remain your lifelong trusted partner." }
+              ].map((item, index) => (
+                <Col md={4} key={index}>
+                  <motion.div variants={fadeUp} className="luxury-info-card">
+                    <span className="card-index">{item.n}</span>
+                    <h4>{item.t}</h4>
+                    <p>{item.d}</p>
+                    <div className="card-line"></div>
+                  </motion.div>
+                </Col>
+              ))}
+            </Row>
+          </motion.div>
         </Container>
       </section>
 
-      {/* Minimal Stats Section */}
-      <section className="minimal-stats py-5">
+      {/* ===== STATS WITH GLOW ===== */}
+      <section className="stats-glass-section py-5">
         <Container>
           <Row className="text-center g-4">
-            <Col md={3} sm={6}>
-              <div className="stat-card">
-                <h3>12+</h3>
-                <p>Years of Trust</p>
-              </div>
-            </Col>
-            <Col md={3} sm={6}>
-              <div className="stat-card">
-                <h3>850+</h3>
-                <p>Homes Delivered</p>
-              </div>
-            </Col>
-            <Col md={3} sm={6}>
-              <div className="stat-card">
-                <h3>15</h3>
-                <p>Prime Districts</p>
-              </div>
-            </Col>
-            <Col md={3} sm={6}>
-              <div className="stat-card">
-                <h3>100%</h3>
-                <p>Legal Verification</p>
-              </div>
-            </Col>
+            {[
+              { value: "12+", label: "Years of Trust" },
+              { value: "850+", label: "Homes Delivered" },
+              { value: "15", label: "Prime Districts" },
+              { value: "100%", label: "Legal Verified" }
+            ].map((item, i) => (
+              <Col md={3} sm={6} key={i}>
+                <motion.div
+                  className="stat-card-luxe"
+                  whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(140, 85, 170, 0.2)" }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                >
+                  <h3 className="stat-number">{item.value}</h3>
+                  <p className="stat-label">{item.label}</p>
+                </motion.div>
+              </Col>
+            ))}
           </Row>
         </Container>
       </section>
 
-      {/* Shared Modern Footer */}
+      {/* ===== FOOTER (UNCHANGED STRUCTURE) ===== */}
       <footer className="modern-footer">
-        <div className="footer-glow"></div>
         <Container>
           <Row className="gy-5">
             <Col lg={4}>
               <h2 className="footer-logo">RealEstate<span>.</span></h2>
               <p className="footer-text">Elevating your living experience with premium properties across Kerala.</p>
-              <div className="social-tray">
-                {['facebook', 'instagram', 'twitter', 'linkedin'].map(icon => (
-                  <div key={icon} className="social-item"><i className={`bi bi-${icon}`}></i></div>
-                ))}
-              </div>
             </Col>
             <Col lg={2} className="footer-links">
               <h5>Explore</h5>
@@ -132,19 +133,21 @@ export default function About() {
             <Col lg={3} className="footer-links">
               <h5>Services</h5>
               <ul className="list-unstyled">
-                <li><Link to="#">Consultation</Link></li>
-                <li><Link to="#">Legal Help</Link></li>
+                <li>Consultation</li>
+                <li>Legal Assistance</li>
               </ul>
             </Col>
             <Col lg={3}>
               <h5>Newsletter</h5>
-              <div className="newsletter-input">
-                <input type="email" placeholder="Enter email" />
-                <button><i className="bi bi-arrow-right"></i></button>
+              <div className="newsletter-wrapper">
+                <input type="email" placeholder="Your premium email" className="luxe-input" />
+                <button className="luxe-btn">→</button>
               </div>
             </Col>
           </Row>
-          <div className="footer-bottom"><p>&copy; 2026 RealEstate Kerala.</p></div>
+          <div className="footer-bottom">
+            <p>© 2026 RealEstate Kerala | The Gold Standard in Realty</p>
+          </div>
         </Container>
       </footer>
     </div>
