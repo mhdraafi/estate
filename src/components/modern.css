@@ -1,0 +1,23 @@
+.modern-page {
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.modern-card {
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+  transition: 0.3s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.modern-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.modern-img {
+  height: 220px;
+  object-fit: cover;
+  width: 100%;
+}
